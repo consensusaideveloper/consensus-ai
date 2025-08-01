@@ -737,31 +737,17 @@ export class ProjectService {
             prismaProject.lastAnalysisAt
         );
         
-        // ステータス自動修正: アーカイブされていないプロジェクトで、分析済みで未分析意見が0の場合は'completed'にする
+        // 修正: ユーザーの明示的な操作でのみプロジェクトステータスを変更
+        // AI分析完了後も元のステータスを維持（collecting, processing等）
         let correctedStatus = prismaProject.status;
-        if (!prismaProject.isArchived && prismaProject.isAnalyzed && unanalyzedOpinionsCount === 0 && prismaProject.status !== 'completed') {
-            console.log('[ProjectService] 🔧 ステータス自動修正検出:', {
-                projectId: prismaProject.id,
-                currentStatus: prismaProject.status,
-                shouldBe: 'completed',
-                reason: 'isArchived=false and isAnalyzed=true and unanalyzedOpinionsCount=0'
-            });
-            
-            // DBを修正（非同期だが背景で実行）
-            setImmediate(async () => {
-                try {
-                    await prisma.project.update({
-                        where: { id: prismaProject.id },
-                        data: { status: 'completed' }
-                    });
-                    console.log('[ProjectService] ✅ ステータス自動修正完了:', prismaProject.id);
-                } catch (error) {
-                    console.error('[ProjectService] ❌ ステータス自動修正失敗:', error);
-                }
-            });
-            
-            correctedStatus = 'completed';
-        }
+        
+        console.log('[ProjectService] 📊 プロジェクトステータス維持:', {
+            projectId: prismaProject.id,
+            currentStatus: prismaProject.status,
+            isAnalyzed: prismaProject.isAnalyzed,
+            unanalyzedOpinionsCount: unanalyzedOpinionsCount,
+            note: 'AI分析後もユーザーの明示的操作まで元ステータスを維持'
+        });
 
         console.log('[ProjectService] 🔍 mapPrismaToProject デバッグ:', {
             projectId: prismaProject.id,

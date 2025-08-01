@@ -1,5 +1,6 @@
 import { adminDatabase, isFirebaseInitialized } from '../lib/firebase-admin';
 import { AppError } from '../middleware/errorHandler';
+import { LimitsConfig } from '../config/limits';
 
 export interface FirebaseProject {
   id: string;
@@ -48,9 +49,10 @@ export class FirebaseDataService {
       if (userId) {
         const projectRef = adminDatabase.ref(`users/${userId}/projects/${projectId}`);
         
-        // タイムアウト付きでFirebase接続を試行
+        // タイムアウト付きでFirebase接続を試行 (環境変数対応)
+        const operationTimeout = LimitsConfig.getFirebaseTimeoutConfig().operation;
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Firebase timeout')), 5000);
+          setTimeout(() => reject(new Error('Firebase timeout')), operationTimeout);
         });
         
         const snapshot = await Promise.race([
@@ -119,8 +121,9 @@ export class FirebaseDataService {
       // Firebaseから実際の意見データを取得（タイムアウト設定）
       const opinionsRef = adminDatabase.ref(`users/${userId}/projects/${projectId}/opinions`);
       
-      // タイムアウト付きでFirebase接続を試行（開発環境では短縮）
-      const timeoutMs = process.env.NODE_ENV === 'development' ? 3000 : 10000;
+      // タイムアウト付きでFirebase接続を試行 (環境変数対応)
+      const firebaseTimeouts = LimitsConfig.getFirebaseTimeoutConfig();
+      const timeoutMs = process.env.NODE_ENV === 'development' ? firebaseTimeouts.development : firebaseTimeouts.production;
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Firebase timeout')), timeoutMs);
       });
@@ -187,9 +190,10 @@ export class FirebaseDataService {
 
       const projectRef = adminDatabase.ref(`users/${userId}/projects/${projectId}`);
       
-      // タイムアウト付きでFirebase更新を実行
+      // タイムアウト付きでFirebase更新を実行 (環境変数対応)
+      const updateTimeout = LimitsConfig.getFirebaseTimeoutConfig().update;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Firebase update timeout')), 5000);
+        setTimeout(() => reject(new Error('Firebase update timeout')), updateTimeout);
       });
 
       await Promise.race([

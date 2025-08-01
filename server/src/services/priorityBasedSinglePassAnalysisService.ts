@@ -25,6 +25,8 @@ import {
   ContinuousAnalysisStatus 
 } from './continuousAnalysisManager';
 
+import { LimitsConfig } from '../config/limits';
+
 /**
  * 優先度付きシングルパス分析オプション
  */
@@ -125,10 +127,14 @@ export class PriorityBasedSinglePassAnalysisService {
   private readonly unifiedAnalysisEngine: UnifiedAnalysisEngine;
   private readonly continuousManager: ContinuousAnalysisManager;
   
-  // デフォルト設定
-  private readonly DEFAULT_TOKEN_LIMIT = 4000;
-  private readonly DEFAULT_MAX_OPINIONS = 15;
-  private readonly DEFAULT_MODEL = 'gpt-4o-mini';
+  // 環境変数対応: AI処理制限を取得
+  private getProcessingLimits() {
+    return LimitsConfig.getAIProcessingLimits().optimal;
+  }
+  
+  private getDefaultModel(): string {
+    return LimitsConfig.getAIServiceConfig().defaultModel;
+  }
   
   constructor() {
     this.priorityCalculator = new OpinionPriorityCalculator();
@@ -344,8 +350,9 @@ export class PriorityBasedSinglePassAnalysisService {
   ): Promise<OptimalSelectionResult> {
     console.log('[PriorityBasedAnalysis] 🎯 最適意見選択開始...');
     
-    const tokenLimit = options.tokenLimit || this.DEFAULT_TOKEN_LIMIT;
-    const maxOpinions = options.maxOpinions || this.DEFAULT_MAX_OPINIONS;
+    const processingLimits = this.getProcessingLimits();
+    const tokenLimit = options.tokenLimit || processingLimits.tokenLimit;
+    const maxOpinions = options.maxOpinions || processingLimits.maxOpinions;
     const strategy = options.selectionStrategy || 'balanced';
     
     const selectionResult = this.selectionEngine.selectOptimalSet(
@@ -383,7 +390,7 @@ export class PriorityBasedSinglePassAnalysisService {
       existingTopics,
       projectId,
       {
-        model: options.model || this.DEFAULT_MODEL,
+        model: options.model || this.getDefaultModel(),
         includeInsights: options.includeInsights ?? true,
         strictValidation: options.strictValidation ?? true
       }

@@ -1,6 +1,7 @@
 import { OpinionPriority, ExistingTopic } from './opinionPriorityCalculator';
 import { getAIServiceManager } from './aiServiceManager';
 import { AppError } from '../middleware/errorHandler';
+import { LimitsConfig } from '../config/limits';
 
 /**
  * 統合分析結果インターフェース
@@ -78,9 +79,20 @@ export interface ExecutionInfo {
  * - 高度な洞察の自動抽出
  */
 export class UnifiedAnalysisEngine {
-  private readonly MAX_RETRY_COUNT = 3;
-  private readonly DEFAULT_MODEL = 'gpt-4o-mini';
-  private readonly CONFIDENCE_THRESHOLD = 0.7;
+  // 環境変数対応: AIサービス設定を取得
+  private getDefaultModel(): string {
+    return LimitsConfig.getAIServiceConfig().defaultModel;
+  }
+  
+  // 環境変数対応: AI信頼性設定を取得
+  private getMaxRetryCount(): number {
+    return LimitsConfig.getAIReliabilityConfig().maxRetryCount;
+  }
+  
+  // 環境変数対応: 信頼度閾値を取得
+  private getConfidenceThreshold(): number {
+    return LimitsConfig.getAIReliabilityConfig().confidenceThreshold;
+  }
   
   /**
    * 統合分析の実行
@@ -101,7 +113,7 @@ export class UnifiedAnalysisEngine {
       selectedOpinions: selectedOpinions.length,
       existingTopics: existingTopics.length,
       projectId,
-      model: options.model || this.DEFAULT_MODEL,
+      model: options.model || this.getDefaultModel(),
       timestamp: new Date().toISOString()
     });
     
@@ -122,7 +134,7 @@ export class UnifiedAnalysisEngine {
       // Step 2: AI分析実行
       const aiResult = await this.executeAIAnalysis(
         prompt, 
-        options.model || this.DEFAULT_MODEL,
+        options.model || this.getDefaultModel(),
         projectId
       );
       
@@ -141,7 +153,7 @@ export class UnifiedAnalysisEngine {
           totalProcessed: selectedOpinions.length,
           timestamp: new Date().toISOString(),
           analysisType: 'unified_single_pass',
-          model: options.model || this.DEFAULT_MODEL,
+          model: options.model || this.getDefaultModel(),
           tokenUsage: {
             estimated: estimatedTokens,
             actual: aiResult.tokensUsed
@@ -314,9 +326,9 @@ ${topicsSection}
     let retryCount = 0;
     let lastError: Error | null = null;
     
-    while (retryCount < this.MAX_RETRY_COUNT) {
+    while (retryCount < this.getMaxRetryCount()) {
       try {
-        console.log(`[UnifiedAnalysis] 🤖 AI分析実行 (試行 ${retryCount + 1}/${this.MAX_RETRY_COUNT})`);
+        console.log(`[UnifiedAnalysis] 🤖 AI分析実行 (試行 ${retryCount + 1}/${this.getMaxRetryCount()})`);
         
         const aiServiceManager = getAIServiceManager();
         const response = await aiServiceManager.generateResponse(
@@ -348,13 +360,13 @@ ${topicsSection}
         retryCount++;
         lastError = error as Error;
         
-        console.warn(`[UnifiedAnalysis] ⚠️ AI分析失敗 (試行 ${retryCount}/${this.MAX_RETRY_COUNT}):`, error);
+        console.warn(`[UnifiedAnalysis] ⚠️ AI分析失敗 (試行 ${retryCount}/${this.getMaxRetryCount()}):`, error);
         
-        if (retryCount >= this.MAX_RETRY_COUNT) {
+        if (retryCount >= this.getMaxRetryCount()) {
           throw new AppError(
             500,
             'AI_ANALYSIS_FAILED',
-            `AI分析が${this.MAX_RETRY_COUNT}回失敗しました`,
+            `AI分析が${this.getMaxRetryCount()}回失敗しました`,
             error
           );
         }

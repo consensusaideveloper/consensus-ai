@@ -47,8 +47,8 @@ export function useAnalysisGuard() {
           }
           
           const timeSinceStart = Date.now() - startTime;
-          const MAX_ANALYSIS_TIME = 10 * 60 * 1000; // 10分
-          const MIN_SESSION_AGE = 30 * 1000; // 30秒（新規セッションの猶予時間）
+          const MAX_ANALYSIS_TIME = parseInt(import.meta.env.VITE_MAX_ANALYSIS_TIME_MS || '600000', 10); // デフォルト10分
+          const MIN_SESSION_AGE = parseInt(import.meta.env.VITE_MIN_SESSION_AGE_MS || '30000', 10); // デフォルト30秒（新規セッションの猶予時間）
           
           // 新規セッションの猶予時間チェック
           if (timeSinceStart < MIN_SESSION_AGE) {
@@ -159,7 +159,7 @@ export function useAnalysisGuard() {
       if (!sessionInfo) return true; // セッションがない場合は健全
 
       const timeSinceStart = Date.now() - sessionInfo.startTime;
-      const MAX_HEALTHY_TIME = 5 * 60 * 1000; // 5分以内なら健全
+      const MAX_HEALTHY_TIME = parseInt(import.meta.env.VITE_MAX_HEALTHY_TIME_MS || '300000', 10); // デフォルト5分以内なら健全
 
       return timeSinceStart <= MAX_HEALTHY_TIME;
     },

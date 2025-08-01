@@ -2,6 +2,7 @@ import { prisma } from '../lib/database';
 import { getAIServiceManager } from './aiServiceManager';
 import { AppError } from '../middleware/errorHandler';
 import { Opinion, Topic } from '../types';
+import { LimitsConfig } from '../config/limits';
 
 /**
  * 最適化された増分分析サービス
@@ -73,8 +74,11 @@ export interface AnalysisContext {
 
 export class OptimizedIncrementalAnalysisService {
   private readonly TOKEN_ESTIMATION_FACTOR = 1.3; // 文字数 × 1.3 = 概算トークン数
-  private readonly DEFAULT_MAX_TOKENS = 3000; // 安全なバッチサイズ
-  private readonly DEFAULT_MAX_OPINIONS = 10; // 1バッチあたり最大意見数
+  
+  // 環境変数対応: AI処理制限を取得
+  private getProcessingLimits() {
+    return LimitsConfig.getAIProcessingLimits().incremental;
+  }
 
   /**
    * メインエントリーポイント: 最適化された増分分析
@@ -321,8 +325,9 @@ export class OptimizedIncrementalAnalysisService {
     opinions: UnanalyzedOpinion[], 
     options: OptimizedAnalysisOptions
   ): UnanalyzedOpinion[][] {
-    const maxTokens = options.maxTokensPerBatch || this.DEFAULT_MAX_TOKENS;
-    const maxOpinions = options.maxOpinionsPerBatch || this.DEFAULT_MAX_OPINIONS;
+    const processingLimits = this.getProcessingLimits();
+    const maxTokens = options.maxTokensPerBatch || processingLimits.maxTokens;
+    const maxOpinions = options.maxOpinionsPerBatch || processingLimits.maxOpinions;
 
     const batches: UnanalyzedOpinion[][] = [];
     let currentBatch: UnanalyzedOpinion[] = [];

@@ -185,12 +185,14 @@ const scheduledDeletionService = new ScheduledDeletionService();
 scheduledDeletionService.startScheduledDeletion();
 console.log('✅ Scheduled deletion service initialized');
 
-// Phase 1-3: タイムアウト対策 - サーバーレベルのタイムアウト設定
-server.timeout = 10 * 60 * 1000; // 10分
-server.keepAliveTimeout = 10 * 60 * 1000; // 10分
-server.headersTimeout = 10 * 60 * 1000; // 10分
+// Phase 1-3: 環境変数対応タイムアウト設定 - サーバーレベルのタイムアウト設定
+const aiTimeoutConfig = LimitsConfig.getAITimeoutConfig();
+server.timeout = aiTimeoutConfig.server;
+server.keepAliveTimeout = aiTimeoutConfig.serverKeepAlive;
+server.headersTimeout = aiTimeoutConfig.serverHeaders;
 
-console.log('[Server] ⏰ タイムアウト設定: 10分');
+const timeoutMinutes = Math.round(aiTimeoutConfig.server / 60000);
+console.log(`[Server] ⏰ タイムアウト設定: ${timeoutMinutes}分 (環境変数対応)`);
 
 // Start server with error handling
 console.log(`🚀 Starting server on port ${port}...`);

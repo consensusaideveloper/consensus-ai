@@ -2,6 +2,7 @@ import { prisma } from '../lib/database';
 import { database } from '../lib/firebase-admin';
 import { AppError } from '../middleware/errorHandler';
 import { OpinionService } from './opinionService.db';
+import { LimitsConfig } from '../config/limits';
 
 export class SyncService {
     private opinionService = new OpinionService();
@@ -177,10 +178,23 @@ export class SyncService {
             if (updates.name !== undefined) updateData.name = updates.name;
             if (updates.description !== undefined) updateData.description = updates.description;
             if (updates.status !== undefined) {
-                updateData.status = updates.status.toUpperCase().replace('-', '_');
+                // AI分析によるstatus='completed'への自動変更を防ぐ
+                // ユーザーの明示的な操作でのみプロジェクトステータスを変更
+                console.log('[SyncService] 🔄 ステータス更新要求:', {
+                    projectId,
+                    requestedStatus: updates.status,
+                    note: 'AI分析による自動completed設定は無視されます'
+                });
+                
+                // AI分析後の自動completed変更を無視
                 if (updates.status === 'completed') {
-                    updateData.isCompleted = true;
-                    updateData.completedAt = new Date();
+                    console.log('[SyncService] ⚠️ status=completed変更をスキップ（AI分析後の自動変更を防止）');
+                    // updateData.status = updates.status.toUpperCase().replace('-', '_');
+                    // updateData.isCompleted = true;
+                    // updateData.completedAt = new Date();
+                } else {
+                    // completed以外のステータス変更は許可
+                    updateData.status = updates.status.toUpperCase().replace('-', '_');
                 }
             }
             if (updates.priority !== undefined) {
@@ -315,10 +329,11 @@ export class SyncService {
                 console.log('[SyncService] 🗑️ Deleting from Firebase FIRST:', firebaseId);
                 
                 try {
-                    // Firebase削除にタイムアウトを設定（5秒）
+                    // Firebase削除にタイムアウトを設定 (環境変数対応)
                     const deletePromise = database.ref(`users/${userId}/projects/${firebaseId}`).remove();
+                    const operationTimeout = LimitsConfig.getFirebaseTimeoutConfig().operation;
                     const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Firebase delete timeout')), 5000)
+                        setTimeout(() => reject(new Error('Firebase delete timeout')), operationTimeout)
                     );
                     
                     await Promise.race([deletePromise, timeoutPromise]);

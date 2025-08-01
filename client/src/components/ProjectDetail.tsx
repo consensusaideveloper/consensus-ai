@@ -89,16 +89,21 @@ export function ProjectDetail() {
     deleteProject,
     archiveProject,
     completeProject,
+    reloadProjects,
     loading: projectsLoading,
   } = useProjects();
   const { topics: firebaseTopics, syncTopicsFromAnalysis } = useTopicStatus(id);
 
   // 分析完了時のプロジェクトデータ再取得
-  const handleAnalysisCompleteForReload = useCallback(() => {
-    if (id) {
-      getProject(id);
+  const handleAnalysisCompleteForReload = useCallback(async () => {
+    console.log('[ProjectDetail] 🔄 AI分析完了検知 - プロジェクトデータ再取得開始');
+    try {
+      await reloadProjects();
+      console.log('[ProjectDetail] ✅ プロジェクトデータ再取得完了');
+    } catch (error) {
+      console.error('[ProjectDetail] ❌ プロジェクトデータ再取得エラー:', error);
     }
-  }, [id, getProject]);
+  }, [reloadProjects]);
 
   // AI分析のリアルタイム監視（分析完了時の自動更新）
   const { isAnalyzing: firebaseIsAnalyzing } = useAnalysisRealtime(id, handleAnalysisCompleteForReload);
@@ -375,8 +380,9 @@ export function ProjectDetail() {
     if (project) {
       fetchActualResponseCount();
 
-      // 30秒ごとに意見数を更新
-      const interval = setInterval(fetchActualResponseCount, 30000);
+      // 30秒ごとに意見数を更新 (環境変数対応)
+      const updateInterval = parseInt(import.meta.env.VITE_MIN_SESSION_AGE_MS || '30000', 10);
+      const interval = setInterval(fetchActualResponseCount, updateInterval);
       return () => clearInterval(interval);
     }
   }, [project, user?.id, fetchActualResponseCount]);
@@ -654,6 +660,7 @@ export function ProjectDetail() {
 
     setAnalysisLoading(true);
     setIsAnalysisRunning(true);
+    setShowAnalysisProgress(true);
 
     try {
       const response = await fetch(`/api/analysis/projects/${id}/topics`, {
@@ -706,9 +713,6 @@ export function ProjectDetail() {
       showNotification(
         t("projectDetail.notifications.analysisStartedInBackground")
       );
-
-      // API呼び出し成功時のみリアルタイム進捗カードを表示
-      setShowAnalysisProgress(true);
 
       if (result.success) {
         showNotification(

@@ -1,6 +1,7 @@
 import { Opinion, Topic } from '../types';
 import { AIService } from './aiService';
 import { AppError } from '../middleware/errorHandler';
+import { LimitsConfig } from '../config/limits';
 
 export interface ConfidenceMetrics {
     topicClassification: number;  // トピック分類の信頼度
@@ -60,11 +61,10 @@ export interface AnalysisConfidenceResult {
 export class AnalysisConfidenceService {
     private aiService: AIService;
     
-    // Phase 3-2: 信頼性評価パラメータ
-    private readonly CONFIDENCE_THRESHOLD = 0.7;
-    private readonly AMBIGUITY_THRESHOLD = 0.4;
-    private readonly BORDERLINE_THRESHOLD = 0.6;
-    private readonly LOW_CONFIDENCE_THRESHOLD = 0.5;
+    // 環境変数対応: AI信頼性設定を取得
+    private getReliabilityConfig() {
+        return LimitsConfig.getAIReliabilityConfig();
+    }
 
     constructor() {
         this.aiService = new AIService();
@@ -336,7 +336,7 @@ export class AnalysisConfidenceService {
         for (const opinion of opinions) {
             const ambiguityAnalysis = await this.analyzeOpinionAmbiguity(opinion);
             
-            if (ambiguityAnalysis.score >= this.AMBIGUITY_THRESHOLD) {
+            if (ambiguityAnalysis.score >= this.getReliabilityConfig().ambiguityThreshold) {
                 ambiguousOpinions.push({
                     opinion,
                     ambiguityScore: ambiguityAnalysis.score,
@@ -404,7 +404,7 @@ export class AnalysisConfidenceService {
         for (const opinion of classifiedOpinions) {
             const confidence = await this.calculateClassificationConfidence(opinion, topics);
             
-            if (confidence < this.BORDERLINE_THRESHOLD) {
+            if (confidence < this.getReliabilityConfig().borderlineThreshold) {
                 const alternativeTopics = await this.findAlternativeTopics(opinion, topics);
                 
                 borderlineClassifications.push({
@@ -472,7 +472,7 @@ export class AnalysisConfidenceService {
         for (const topic of topics) {
             const analysis = await this.analyzeTopicConfidence(topic, opinions);
             
-            if (analysis.score < this.LOW_CONFIDENCE_THRESHOLD) {
+            if (analysis.score < this.getReliabilityConfig().lowConfidenceThreshold) {
                 lowConfidenceTopics.push({
                     topic,
                     confidenceScore: analysis.score,
@@ -579,7 +579,7 @@ export class AnalysisConfidenceService {
         const actions: AnalysisRecommendations['actions'] = [];
 
         // 全体信頼度に基づく推奨
-        const manualReview = metrics.overallConfidence < this.CONFIDENCE_THRESHOLD;
+        const manualReview = metrics.overallConfidence < this.getReliabilityConfig().confidenceThreshold;
         const additionalData = opinions.length < 50 || topics.length < 5;
         const reclassification = uncertainty.borderlineClassifications.length > opinions.length * 0.2;
 

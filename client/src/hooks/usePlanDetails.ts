@@ -105,8 +105,8 @@ interface PlanDetailsAPI {
   error: string | null;
 }
 
-// キャッシュ設定
-const CACHE_DURATION = 5 * 60 * 1000; // 5分間キャッシュ
+// キャッシュ設定 (環境変数対応)
+const CACHE_DURATION = parseInt(import.meta.env.VITE_PLAN_CACHE_DURATION_MS || '300000', 10); // デフォルト5分間キャッシュ
 let planDetailsCache: { data: AllPlanDetails; timestamp: number } | null = null;
 let comparisonCache: { data: any; timestamp: number } | null = null;
 

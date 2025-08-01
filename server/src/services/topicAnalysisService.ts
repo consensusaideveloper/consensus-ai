@@ -1067,39 +1067,13 @@ Please return results in the following JSON format:
                 jobId: `direct-${projectId}-${startTime}`
             });
 
-            // プロジェクトステータスを「完了」に更新（SQLite + Firebase同期）
-            try {
-                console.log('[TopicAnalysis] 📊 プロジェクトステータスを「completed」に更新:', projectId);
-                
-                // SQLiteを先に更新
-                await prisma.project.update({
-                    where: { id: project.id },
-                    data: {
-                        status: 'completed'
-                    }
-                });
-                console.log('[TopicAnalysis] ✅ SQLiteプロジェクトステータス更新完了');
-
-                // Firebaseにも同期（エラー時はSQLiteをロールバック）
-                try {
-                    const firebaseDataService = await this.getFirebaseDataService();
-                    const firebaseProjectId = (project as any).firebaseId || projectId;
-                    await firebaseDataService.updateProject(userId, firebaseProjectId, {
-                        status: 'completed'
-                    });
-                    console.log('[TopicAnalysis] ✅ Firebaseプロジェクトステータス同期完了');
-                } catch (firebaseError) {
-                    console.error('[TopicAnalysis] ❌ Firebaseステータス同期エラー:', firebaseError);
-                    // CLAUDE.md要件: Firebase同期失敗でもSQLite（メイン機能）は成功として継続
-                    // 分析が完了している場合はステータスを'completed'のまま維持
-                    console.warn('[TopicAnalysis] ⚠️ Firebaseステータス同期失敗、但し分析は完了済みのためステータスはcompletedのまま維持');
-                }
-
-                console.log('[TopicAnalysis] ✅ プロジェクトステータス更新完了');
-            } catch (statusError) {
-                console.error('[TopicAnalysis] ❌ プロジェクトステータス更新エラー:', statusError);
-                // ステータス更新エラーがあっても分析結果は返す
-            }
+            // 分析完了後は元のプロジェクトステータスを維持（意見収集継続のため）
+            // プロジェクト完了は別途ユーザーが明示的に行う
+            console.log('[TopicAnalysis] 📊 AI分析完了 - 元のプロジェクトステータスを維持:', {
+                projectId,
+                currentStatus: project.status,
+                note: '分析完了後も意見収集は継続可能'
+            });
 
             return topicAnalysis;
         } catch (error) {

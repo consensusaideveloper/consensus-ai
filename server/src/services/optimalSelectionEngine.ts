@@ -1,4 +1,5 @@
 import { OpinionPriority } from './opinionPriorityCalculator';
+import { LimitsConfig } from '../config/limits';
 
 /**
  * 最適選択結果インターフェース
@@ -40,17 +41,20 @@ export interface OptimizationInfo {
  * - 制約条件の柔軟な対応
  */
 export class OptimalSelectionEngine {
-  private readonly DEFAULT_TOKEN_LIMIT = 4000;
-  private readonly DEFAULT_MAX_OPINIONS = 15;
   private readonly EFFICIENCY_THRESHOLD = 20; // 優先度/トークン比の最低閾値
+  
+  // 環境変数対応: AI処理制限を取得
+  private getProcessingLimits() {
+    return LimitsConfig.getAIProcessingLimits().optimal;
+  }
   
   /**
    * 最適な意見セットを選択
    */
   selectOptimalSet(
     prioritizedOpinions: OpinionPriority[],
-    tokenLimit: number = this.DEFAULT_TOKEN_LIMIT,
-    maxOpinions: number = this.DEFAULT_MAX_OPINIONS,
+    tokenLimit: number = this.getProcessingLimits().tokenLimit,
+    maxOpinions: number = this.getProcessingLimits().maxOpinions,
     strategy: 'greedy_priority' | 'token_efficiency' | 'balanced' = 'balanced'
   ): OptimalSelectionResult {
     const startTime = Date.now();

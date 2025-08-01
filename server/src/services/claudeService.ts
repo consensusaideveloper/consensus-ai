@@ -33,7 +33,7 @@ export class ClaudeService {
 
     /**
      * Claude Code SDKを動的インポートで初期化
-     * ES Module互換性問題を回避するための実装
+     * 安全な動的インポートを使用（eval使用を廃止）
      */
     private async initializeSdk(): Promise<void> {
         if (this.initialized) return;
@@ -41,8 +41,9 @@ export class ClaudeService {
         try {
             console.log('[ClaudeService] 📦 Claude Code SDK動的インポート開始...');
             
-            // ES Moduleを動的インポートで読み込み
-            const { claude, isEnhancedError, hasResolution } = await eval('import("@instantlyeasy/claude-code-sdk-ts")');
+            // 安全な動的インポート（eval使用を廃止）
+            const sdkModule = await import('@instantlyeasy/claude-code-sdk-ts');
+            const { claude, isEnhancedError, hasResolution } = sdkModule;
             
             this.claudeSdk = claude;
             this.isEnhancedError = isEnhancedError;

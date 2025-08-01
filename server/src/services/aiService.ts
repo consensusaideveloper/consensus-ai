@@ -2,6 +2,7 @@ import { AIResponse } from '../types';
 import { AppError } from '../middleware/errorHandler';
 // 開発段階でのみClaude Code SDKを使用
 import { ClaudeService } from './claudeService';
+import { LimitsConfig } from '../config/limits';
 
 export class AIService {
     // OpenAI API実装（本番用・一時的にコメントアウト）
@@ -88,13 +89,16 @@ export class AIService {
                 ]
             };
 
+            // AI設定を環境変数から取得
+            const aiConfig = LimitsConfig.getAIServiceConfig();
+            
             // o3/o4系モデルの場合
             if (model.includes('o3') || model.includes('o4')) {
-                requestBody.max_completion_tokens = 4000;
+                requestBody.max_completion_tokens = aiConfig.maxCompletionTokens;
                 requestBody.reasoning_effort = 'medium';
             } else {
                 // GPT系モデルの場合
-                requestBody.max_tokens = 4000;
+                requestBody.max_tokens = aiConfig.maxTokens;
                 requestBody.temperature = 0.7;
             }
 
@@ -112,9 +116,9 @@ export class AIService {
 
             console.log('[AIService] 🌐 fetch APIリクエスト開始...');
             
-            // タイムアウト設定付きでAPIリクエストを実行
+            // タイムアウト設定付きでAPIリクエストを実行（環境変数対応）
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 120000); // 2分でタイムアウト
+            const timeoutId = setTimeout(() => controller.abort(), aiConfig.requestTimeout);
             
             let response;
             try {

@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BarChart3, TrendingUp, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLanguage } from '../hooks/useLanguage';
+import { useAnalysisRealtime } from '../hooks/useAnalysisRealtime';
 
 interface AnalysisSummary {
   totalOpinions: number;
@@ -25,12 +26,17 @@ export function AnalysisSummaryCard({ projectId, className = '' }: AnalysisSumma
   const { t, language } = useLanguage();
   const [summary, setSummary] = useState<AnalysisSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // 分析完了時の自動更新用
+  const lastUpdateRef = useRef<number>(0);
 
   const fetchAnalysisSummary = useCallback(async () => {
     if (!projectId || !user?.id) return;
 
     try {
       setLoading(true);
+      const now = Date.now();
+      lastUpdateRef.current = now;
 
       const response = await fetch(`/api/analysis/projects/${projectId}/summary`, {
         headers: {
@@ -78,6 +84,18 @@ export function AnalysisSummaryCard({ projectId, className = '' }: AnalysisSumma
   useEffect(() => {
     fetchAnalysisSummary();
   }, [fetchAnalysisSummary]);
+
+  // AI分析完了時の自動更新
+  const handleAnalysisComplete = useCallback(() => {
+    const timeSinceLastUpdate = Date.now() - lastUpdateRef.current;
+    // 最後の更新から1秒以上経過している場合のみ更新（重複更新防止）
+    if (timeSinceLastUpdate > 1000) {
+      fetchAnalysisSummary();
+    }
+  }, [fetchAnalysisSummary]);
+
+  // AI分析完了の監視
+  useAnalysisRealtime(projectId, handleAnalysisComplete);
 
   // ローディング状態
   if (loading) {

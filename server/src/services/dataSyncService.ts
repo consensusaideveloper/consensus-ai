@@ -43,7 +43,7 @@ export class DataSyncService {
             // 基本情報を同期（既存の重要なフィールドは保持）
             name: firebaseProject.name,
             description: firebaseProject.description,
-            status: firebaseProject.status,
+            // status: Firebase側のstatusは同期しない（ユーザーの明示的操作でのみ変更）
             // 動的カウント: opinionsCountフィールドは削除済み
             updatedAt: new Date(),
             // 同期関連フィールドを更新

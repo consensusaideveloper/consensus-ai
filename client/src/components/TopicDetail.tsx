@@ -235,10 +235,11 @@ export function TopicDetail() {
     }
   }, [notification]);
 
-  // Background sync every 30 seconds
+  // Background sync every 30 seconds (環境変数対応)
   useEffect(() => {
+    const syncInterval = parseInt(import.meta.env.VITE_MIN_SESSION_AGE_MS || '30000', 10);
     const interval = setInterval(async () => {
-    }, 30000);
+    }, syncInterval);
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {

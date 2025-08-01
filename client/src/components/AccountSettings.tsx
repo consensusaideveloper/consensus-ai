@@ -826,13 +826,19 @@ function BillingHistoryCard({ t, language }: BillingHistoryCardProps) {
           stripeInvoices = stripeData.invoices || [];
         }
 
-        // プラン履歴をBilling形式に変換（購入に関わるもののみ）
+        // プラン履歴をBilling形式に変換（実際の購入に関わるもののみ）
         const formattedPlanHistory = planHistoryData
           .filter(record => {
-            // 購入に関わるプラン変更のみ表示
+            // 実際の購入に関わるプラン変更のみ表示（トライアル関連は完全除外）
             const paidChangeTypes = ['upgrade', 'cancel', 'restore'];
-            return paidChangeTypes.includes(record.changeType) || 
-                   (record.toPlan === 'pro' || record.fromPlan === 'pro');
+            const isTrialRelated = record.changeType === 'trial_start' || 
+                                   record.changeType === 'trial_end' ||
+                                   record.fromPlan === PLAN_TYPES.TRIAL;  // PLAN_TYPES定数を使用
+            
+            return paidChangeTypes.includes(record.changeType) && 
+                   !isTrialRelated &&
+                   (record.toPlan === PLAN_TYPES.PRO || record.fromPlan === PLAN_TYPES.PRO) &&
+                   record.toPlan !== PLAN_TYPES.TRIAL;
           })
           .map(record => {
             const planName = getPlanDisplayName(record.toPlan, t);

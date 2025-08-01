@@ -16,7 +16,7 @@ export const dashboardTranslations = {
     opinionsCount: '件の意見を収集',
     created: '作成日',
     status: {
-      completed: '分析完了',
+      completed: '完了',
       processing: 'AI処理中...',
       collecting: '意見収集中',
       readyForAnalysis: '分析待ち',
@@ -119,7 +119,7 @@ export const dashboardTranslations = {
       collecting: '意見収集中（未分析）',
       processing: 'AI分析処理中',
       noAnalysis: '分析未実施',
-      analysisCompleted: '分析完了',
+      analysisCompleted: 'AI分析完了',
       pendingActions: '{count}件のアクション',
       actionCompleted: 'アクション管理完了'
     },
@@ -357,7 +357,7 @@ export const dashboardTranslations = {
       collecting: 'Collecting opinions (unanalyzed)',
       processing: 'AI analysis in progress',
       noAnalysis: 'Analysis not performed',
-      analysisCompleted: 'Analysis completed',
+      analysisCompleted: 'AI Analysis Complete',
       pendingActions: '{count} actions',
       actionCompleted: 'Action management completed'
     },

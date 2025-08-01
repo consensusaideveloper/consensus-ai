@@ -472,6 +472,17 @@ export function Dashboard() {
     return "older";
   };
 
+  // AI分析完了とプロジェクト完了を明確に分離するヘルパー関数
+  const isProjectTrulyCompleted = (project: Project) => {
+    // ユーザーが明示的にプロジェクトを完了した場合のみtrueを返す
+    // AI分析データが存在する場合は、まだアクティブとして扱う
+    if (project.status === "completed") {
+      // AI分析データが存在しない場合のみ「真の完了」とみなす
+      return !project.analysis?.topInsights || project.analysis.topInsights.length === 0;
+    }
+    return false;
+  };
+
   // Filter projects based on all criteria
   const filteredProjects = projects.filter((project) => {
     // Search filter
@@ -489,24 +500,28 @@ export function Dashboard() {
       if (activeTab === "active") {
         matchesTab =
           !project.isArchived &&
-          project.status !== "completed" &&
+          !isProjectTrulyCompleted(project) &&
           (project.status === "collecting" ||
             project.status === "processing" ||
             project.status === "paused" ||
             project.status === "ready-for-analysis" ||
             project.status === "analyzing" ||
+            project.status === "completed" ||
             project.status === "in-progress");
       } else {
         // completed tab
-        matchesTab = (project.status === "completed" || !!project.isArchived);
+        matchesTab = (isProjectTrulyCompleted(project) || !!project.isArchived);
       }
     } else {
       // When using specific status filter, respect completion state based on active tab
       if (activeTab === "active") {
-        matchesTab = !project.isArchived && project.status !== "completed";
+        // Activeタブでは、アーカイブされておらず、真の完了状態でないプロジェクトを表示
+        // AI分析済み（status='completed'）でもActiveタブに表示する
+        matchesTab = !project.isArchived && !isProjectTrulyCompleted(project);
       } else {
         // completed tab
-        matchesTab = (project.status === "completed" || !!project.isArchived);
+        // 真の完了状態またはアーカイブされたプロジェクトを表示
+        matchesTab = (isProjectTrulyCompleted(project) || !!project.isArchived);
       }
     }
 
@@ -538,7 +553,7 @@ export function Dashboard() {
       matchesPeriod &&
       matchesPriority
     );
-  });
+  });;
 
   // Sort projects by most recent activity and urgency
   const sortedProjects = [...filteredProjects].sort((a, b) => {
@@ -605,7 +620,7 @@ export function Dashboard() {
     }
   };
 
-  const getStatusText = (status: Project["status"], isArchived?: boolean) => {
+  const getStatusText = (status: Project["status"], isArchived?: boolean, project?: Project) => {
     if (isArchived) {
       return t("dashboard.status.archived");
     }
@@ -626,7 +641,7 @@ export function Dashboard() {
       default:
         return t("dashboard.status.unknown");
     }
-  };
+  };;
 
   const getStatusIcon = (status: Project["status"], isArchived?: boolean) => {
     if (isArchived) {
@@ -1540,7 +1555,7 @@ export function Dashboard() {
                               ) : (
                                 <StatusIcon className="h-3 w-3 mr-2" />
                               )}
-                              {getStatusText(project.status, project.isArchived)}
+                              {getStatusText(project.status, project.isArchived, project)}
                             </span>
                             {project.priority && (
                               <span

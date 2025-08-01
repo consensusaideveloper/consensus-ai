@@ -1,6 +1,7 @@
 import { AIService } from './aiService';
 import { Opinion } from '../types';
 import { AppError } from '../middleware/errorHandler';
+import { LimitsConfig } from '../config/limits';
 
 export interface MultiDimensionalEmotion {
     joy: number;
@@ -63,8 +64,11 @@ export class AdvancedSentimentAnalysisService {
     
     // Phase 3-1: 感情分析パラメータ
     private readonly BATCH_SIZE = 10;
-    private readonly MAX_RETRIES = 3;
-    private readonly CONFIDENCE_THRESHOLD = 0.7;
+    
+    // 環境変数対応: AI信頼性設定を取得
+    private getReliabilityConfig() {
+        return LimitsConfig.getAIReliabilityConfig();
+    }
 
     constructor() {
         this.aiService = new AIService();
@@ -541,7 +545,7 @@ JSONのみを回答してください。`;
         const consistencyScore = Math.max(0, 1 - confidenceVariance);
 
         // 信頼性スコア（高信頼度の結果の割合）
-        const highConfidenceCount = results.filter(r => r.overallSentiment.confidence >= this.CONFIDENCE_THRESHOLD).length;
+        const highConfidenceCount = results.filter(r => r.overallSentiment.confidence >= this.getReliabilityConfig().confidenceThreshold).length;
         const reliabilityScore = highConfidenceCount / results.length;
 
         return {

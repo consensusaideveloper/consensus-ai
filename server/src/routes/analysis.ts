@@ -4,6 +4,7 @@ import { requireActiveProject } from "../middleware/archiveProtection";
 import { AppError } from "../middleware/errorHandler";
 import { prisma } from "../lib/database";
 import { AnalysisLimitService } from "../services/AnalysisLimitService";
+import { LimitsConfig } from "../config/limits";
 
 const router = Router();
 
@@ -86,10 +87,13 @@ router.post(
     const projectId = req.params.id;
     const userId = req.userId!;
 
-    // Phase 1-3: 拡張タイムアウト設定（10分）
-    req.setTimeout(10 * 60 * 1000, () => {
+    // Phase 1-3: 環境変数対応タイムアウト設定
+    const timeoutConfig = LimitsConfig.getAITimeoutConfig();
+    
+    req.setTimeout(timeoutConfig.analysisRequest, () => {
+      const timeoutMinutes = Math.round(timeoutConfig.analysisRequest / 60000);
       console.error(
-        "[AnalysisAPI] ⏰ Request timeout (10 minutes) - 分析処理が長時間実行されました"
+        `[AnalysisAPI] ⏰ Request timeout (${timeoutMinutes} minutes) - 分析処理が長時間実行されました`
       );
       if (!res.headersSent) {
         res.status(408).json({
@@ -103,9 +107,10 @@ router.post(
       }
     });
 
-    res.setTimeout(10 * 60 * 1000, () => {
+    res.setTimeout(timeoutConfig.analysisResponse, () => {
+      const timeoutMinutes = Math.round(timeoutConfig.analysisResponse / 60000);
       console.error(
-        "[AnalysisAPI] ⏰ Response timeout (10 minutes) - レスポンス送信がタイムアウトしました"
+        `[AnalysisAPI] ⏰ Response timeout (${timeoutMinutes} minutes) - レスポンス送信がタイムアウトしました`
       );
     });
 
