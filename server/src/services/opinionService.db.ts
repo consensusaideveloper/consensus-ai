@@ -316,12 +316,14 @@ export class OpinionService {
             const whereClause: any = { projectId: project.id };
             
             if (filters?.analysisStatus && filters.analysisStatus !== 'all') {
-                // Use OpinionAnalysisState.lastAnalyzedAt to match frontend logic
+                // 修正: OpinionAnalysisStateテーブルの存在有無で分析状態を判定
                 if (filters.analysisStatus === 'analyzed') {
+                    // 分析済み: OpinionAnalysisStateレコードが存在し、lastAnalyzedAtがnullでない
                     whereClause.analysisState = {
                         lastAnalyzedAt: { not: null }
                     };
                 } else if (filters.analysisStatus === 'unanalyzed') {
+                    // 未分析: OpinionAnalysisStateレコードが存在しないか、lastAnalyzedAtがnull
                     whereClause.OR = [
                         { analysisState: null },
                         { analysisState: { lastAnalyzedAt: null } }
@@ -351,15 +353,24 @@ export class OpinionService {
                 projectId: project.id,
                 analysisStatus: filters?.analysisStatus,
                 sortBy,
-                sortOrder
+                sortOrder,
+                whereClause: JSON.stringify(whereClause, null, 2)
             });
 
+            // 修正: LEFT JOINでOpinionAnalysisStateを取得し、レコードが存在しない意見も含める
             const prismaOpinions = await prisma.opinion.findMany({
                 where: whereClause,
                 orderBy,
                 include: {
-                    analysisState: true // OpinionAnalysisStateを含める
+                    analysisState: true, // LEFT JOINでOpinionAnalysisStateを含める（存在しない場合はnull）
+                    stanceAnalyses: true // 立場分析データも含める
                 }
+            });
+
+            console.log('[OpinionService] Query result:', {
+                totalOpinions: prismaOpinions.length,
+                analyzedCount: prismaOpinions.filter(op => op.analysisState?.lastAnalyzedAt).length,
+                unanalyzedCount: prismaOpinions.filter(op => !op.analysisState?.lastAnalyzedAt).length
             });
 
             return prismaOpinions.map(this.mapPrismaToOpinion);

@@ -417,15 +417,12 @@ export function ProjectOpinions() {
       const matchesActionStatus =
         actionStatusFilter === "all" ||
         opinion.actionStatus === actionStatusFilter;
-      const matchesAnalysisStatus =
-        analysisStatusFilter === "all" ||
-        getAnalysisStatus(opinion) === analysisStatusFilter;
+      // analysisStatusFilter is handled by backend API - removed client-side filtering to avoid double filtering
       return (
         matchesSearch &&
         matchesFilter &&
         matchesSentiment &&
-        matchesActionStatus &&
-        matchesAnalysisStatus
+        matchesActionStatus
       );
     })
     .sort((a, b) => {
