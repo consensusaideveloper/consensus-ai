@@ -1,0 +1,19 @@
+{
+  "name": "consensus-ai",
+  "version": "1.0.0",
+  "description": "ConsensusAI Project",
+  "scripts": {
+    "predev": "npm run clean-ports",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\" \"npx prisma studio --schema=./server/prisma/schema.prisma\"",
+    "dev:server": "npm run clean-ports && npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "dev:studio": "npx prisma studio --schema=./server/prisma/schema.prisma",
+    "clean-ports": "lsof -ti:3001 | xargs kill -9 2>/dev/null || true && lsof -ti:5173 | xargs kill -9 2>/dev/null || true && lsof -ti:5555 | xargs kill -9 2>/dev/null || true",
+    "build": "npm run build --prefix server && npm run build --prefix client",
+    "install:all": "npm install --prefix server && npm install --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "private": true
+}

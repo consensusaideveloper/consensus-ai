@@ -1,0 +1,76 @@
+/* International DatePicker スタイル */
+
+/* 入力フィールドのスタイル統一 */
+.international-date-picker {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.international-date-picker:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+/* カレンダーポップアップのスタイル */
+.international-date-picker-calendar {
+  font-family: inherit;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* カレンダーヘッダー */
+.react-datepicker__header {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+/* 現在の日付ハイライト */
+.react-datepicker__day--today {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* 選択された日付 */
+.react-datepicker__day--selected {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.react-datepicker__day--selected:hover {
+  background-color: #2563eb;
+}
+
+/* 日付ホバー効果 */
+.react-datepicker__day:hover {
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+}
+
+/* ドロップダウンスタイル */
+.react-datepicker__year-dropdown,
+.react-datepicker__month-dropdown {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.react-datepicker__year-option:hover,
+.react-datepicker__month-option:hover {
+  background-color: #f3f4f6;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 640px) {
+  .international-date-picker-calendar {
+    transform: scale(0.9);
+    transform-origin: top left;
+  }
+}

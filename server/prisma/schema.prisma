@@ -1,0 +1,346 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String            @id
+  email               String            @unique
+  name                String?
+  purpose             String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  language            String?           @default("ja")
+  analysisLanguage    String?
+  purposeSkipped      Boolean?          @default(false)
+  avatar              String?
+  trialStartDate      DateTime?
+  trialEndDate        DateTime?
+  subscriptionStatus  String?           @default("free")
+  stripeCustomerId    String?
+  isDeleted           Boolean           @default(false)
+  deletionRequestedAt DateTime?
+  scheduledDeletionAt DateTime?
+  deletionReason      String?
+  deletionCancelledAt DateTime?
+  analysisUsage       AnalysisUsage[]   @relation("AnalysisUsages")
+  contacts            Contact[]
+  projects            Project[]
+  planHistory         UserPlanHistory[]
+
+  @@index([trialEndDate], map: "idx_users_trial_end_date")
+  @@index([subscriptionStatus], map: "idx_users_subscription_status")
+  @@index([isDeleted], map: "idx_users_is_deleted")
+  @@index([scheduledDeletionAt], map: "idx_users_scheduled_deletion")
+  @@map("users")
+}
+
+model Project {
+  id                        String                 @id @default(cuid())
+  name                      String
+  description               String?
+  status                    String                 @default("collecting")
+  collectionMethod          String
+  createdAt                 DateTime               @default(now())
+  updatedAt                 DateTime               @updatedAt
+  opinionsCount             Int                    @default(0)
+  isCompleted               Boolean                @default(false)
+  completedAt               DateTime?
+  isArchived                Boolean                @default(false)
+  archivedAt                DateTime?
+  priorityLevel             String?
+  priorityReason            String?
+  priorityUpdatedAt         DateTime?
+  slackChannel              String?
+  webformUrl                String?
+  isAnalyzed                Boolean                @default(false)
+  lastAnalysisAt            DateTime?
+  lastAnalyzedOpinionsCount Int?
+  analyzedOpinionsCount     Int                    @default(0)
+  pendingOpinionsCount      Int                    @default(0)
+  firebaseId                String?
+  syncStatus                String?                @default("pending")
+  lastSyncAt                DateTime?
+  userId                    String
+  analysis_checkpoints      analysis_checkpoints[]
+  analysisHistory           AnalysisHistory[]
+  analysisUsage             AnalysisUsage[]        @relation("AnalysisUsages")
+  insights                  Insight[]
+  opinions                  Opinion[]
+  user                      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks                     Task[]
+  topics                    Topic[]
+
+  @@map("projects")
+}
+
+model Opinion {
+  id                    String                  @id @default(cuid())
+  content               String
+  submittedAt           DateTime                @default(now())
+  isBookmarked          Boolean                 @default(false)
+  sentiment             String                  @default("NEUTRAL")
+  characterCount        Int
+  projectId             String
+  topicId               String?
+  firebaseId            String?
+  lastSyncAt            DateTime?
+  syncStatus            String?                 @default("pending")
+  metadata              String?
+  analysisStatus        String                  @default("unanalyzed")
+  analyzedAt            DateTime?
+  analysisVersion       Int?
+  actionLogs            String?
+  actionStatus          String?                 @default("unhandled")
+  dueDate               DateTime?
+  priorityLevel         String?
+  priorityReason        String?
+  priorityUpdatedAt     DateTime?
+  actionStatusReason    String?
+  actionStatusUpdatedAt DateTime?
+  newActionLogs         ActionLog[]             @relation("OpinionActionLogs")
+  analysisState         OpinionAnalysisState?
+  stanceAnalyses        OpinionStanceAnalysis[]
+  topic                 Topic?                  @relation(fields: [topicId], references: [id])
+  project               Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, analysisStatus])
+  @@index([projectId, analyzedAt])
+  @@map("opinions")
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  status      String   @default("PENDING")
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+model Topic {
+  id                String                  @id @default(cuid())
+  name              String
+  category          String?
+  count             Int                     @default(0)
+  summary           String
+  status            String                  @default("UNHANDLED")
+  priorityLevel     String?
+  priorityReason    String?
+  priorityUpdatedAt DateTime?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  hasActiveActions  Boolean                 @default(false)
+  lastActionDate    DateTime?
+  firebaseId        String?
+  syncStatus        String?                 @default("pending")
+  lastSyncAt        DateTime?
+  projectId         String
+  statusReason      String?
+  statusUpdatedAt   DateTime?
+  stanceAnalyses    OpinionStanceAnalysis[]
+  opinions          Opinion[]
+  project           Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("topics")
+}
+
+model Insight {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  count       Int      @default(0)
+  status      String   @default("UNHANDLED")
+  priority    String   @default("medium")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("insights")
+}
+
+model OpinionAnalysisState {
+  opinionId                String    @id
+  projectId                String
+  lastAnalyzedAt           DateTime?
+  analysisVersion          Int       @default(1)
+  topicId                  String?
+  classificationConfidence Decimal?
+  manualReviewFlag         Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  firebaseId               String?
+  syncStatus               String?   @default("pending")
+  lastSyncAt               DateTime?
+  opinion                  Opinion   @relation(fields: [opinionId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, lastAnalyzedAt])
+  @@index([projectId, syncStatus])
+  @@map("opinion_analysis_state")
+}
+
+model AnalysisHistory {
+  id                   String    @id @default(cuid())
+  projectId            String
+  analysisType         String
+  opinionsProcessed    Int
+  newTopicsCreated     Int       @default(0)
+  updatedTopics        Int       @default(0)
+  executionTimeSeconds Int?
+  createdAt            DateTime  @default(now())
+  firebaseId           String?
+  syncStatus           String?   @default("pending")
+  lastSyncAt           DateTime?
+  executedBy           String?
+  executionReason      String?
+  project              Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_history")
+}
+
+model OpinionStanceAnalysis {
+  id               String    @id @default(cuid())
+  opinionId        String
+  topicId          String
+  stance           String
+  confidence       Decimal   @default(0.0)
+  reasoning        String?
+  analyzedAt       DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  firebaseId       String?
+  syncStatus       String?   @default("pending")
+  lastSyncAt       DateTime?
+  detailedStance   String?
+  sentiment        String?
+  constructiveness String?
+  emotionalTone    String?
+  topic            Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  opinion          Opinion   @relation(fields: [opinionId], references: [id], onDelete: Cascade)
+
+  @@unique([opinionId, topicId])
+  @@index([topicId, stance])
+  @@index([opinionId, analyzedAt])
+  @@index([topicId, detailedStance])
+  @@map("opinion_stance_analysis")
+}
+
+model analysis_checkpoints {
+  id         String   @id
+  key        String   @unique
+  projectId  String?
+  data       String
+  compressed Boolean  @default(false)
+  checksum   String
+  stage      String?
+  progress   Int?     @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  projects   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ActionLog {
+  id        String   @id @default(cuid())
+  opinionId String
+  type      String
+  content   String
+  author    String
+  authorId  String?
+  metadata  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  opinion   Opinion  @relation("OpinionActionLogs", fields: [opinionId], references: [id], onDelete: Cascade)
+
+  @@index([opinionId, createdAt])
+  @@index([opinionId, type])
+  @@map("action_logs")
+}
+
+model AnalysisUsage {
+  id                String   @id @default(cuid())
+  userId            String
+  projectId         String
+  executedAt        DateTime @default(now())
+  analysisType      String
+  opinionsProcessed Int
+  executionTime     Int?
+  project           Project  @relation("AnalysisUsages", fields: [projectId], references: [id], onDelete: Cascade)
+  user              User     @relation("AnalysisUsages", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, executedAt])
+  @@index([projectId, executedAt])
+  @@index([userId, projectId, executedAt])
+  @@map("analysis_usage")
+}
+
+model UserFeedbackLog {
+  id             String   @id @default(cuid())
+  userHashId     String
+  feedbackType   String   @default("account_deletion")
+  deletionReason String?
+  customReason   String?
+  userContext    String?
+  createdAt      DateTime @default(now())
+
+  @@index([feedbackType, createdAt])
+  @@map("user_feedback_logs")
+}
+
+model Contact {
+  id           String    @id @default(cuid())
+  userId       String?
+  name         String
+  email        String
+  category     String
+  subject      String
+  message      String
+  status       String    @default("open")
+  priority     String    @default("normal")
+  userAgent    String?
+  browserInfo  String?
+  userPlan     String?
+  projectCount Int?
+  firebaseId   String?
+  syncStatus   String?   @default("pending")
+  lastSyncAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User?     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([category, status])
+  @@index([status, priority])
+  @@map("contacts")
+}
+
+model UserPlanHistory {
+  id            String    @id @default(cuid())
+  userId        String
+  fromPlan      String?
+  toPlan        String
+  changeType    String
+  changeReason  String?
+  stripeEventId String?
+  metadata      String?
+  effectiveDate DateTime
+  createdAt     DateTime  @default(now())
+  firebaseId    String?
+  syncStatus    String?   @default("pending")
+  lastSyncAt    DateTime?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, effectiveDate])
+  @@index([changeType, createdAt])
+  @@index([userId, changeType])
+  @@map("user_plan_history")
+}

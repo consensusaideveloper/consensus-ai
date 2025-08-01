@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  consensus-ai-backend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=file:./data/prod.db
+    volumes:
+      - consensus_data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development environment
+  consensus-ai-dev:
+    build: .
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=file:./data/dev.db
+    volumes:
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - consensus_dev_data:/app/data
+    command: npm run dev
+    restart: unless-stopped
+    profiles:
+      - dev
+
+volumes:
+  consensus_data:
+    driver: local
+  consensus_dev_data:
+    driver: local

@@ -1,0 +1,260 @@
+{
+  "rules": {
+    // ========================================
+    // システム全体データ (ルートレベル)
+    // ========================================
+    
+    // 開発者用退会統計データ: ユーザー削除後も永続保存
+    "user_feedback_log": {
+      "$feedbackId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    // お問い合わせデータ: 認証・未認証問わず管理者が管理
+    "contacts": {
+      "$contactId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['id', 'name', 'email', 'category', 'subject', 'message', 'status', 'priority', 'createdAt', 'updatedAt']) && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 100 && newData.child('email').isString() && newData.child('email').val().matches(/^[^@]+@[^@]+\\.[^@]+$/) && newData.child('category').val().matches(/^(technical|billing|feature|other)$/) && newData.child('subject').isString() && newData.child('subject').val().length >= 1 && newData.child('subject').val().length <= 200 && newData.child('message').isString() && newData.child('message').val().length >= 10 && newData.child('message').val().length <= 5000 && newData.child('status').val().matches(/^(open|in_progress|resolved)$/) && newData.child('priority').val().matches(/^(low|normal|high|urgent)$/)"
+      }
+    },
+
+    // AI分析セッション: リアルタイム分析状況監視
+    "analysis-sessions": {
+      "$projectId": {
+        ".read": true,
+        ".write": true,
+        "intermediate-results": {
+          ".read": true
+        }
+      }
+    },
+
+    // 管理者用データ
+    "admin": {
+      ".read": true,
+      ".write": true
+    },
+
+    // トライアル履歴データ: ユーザー毎のトライアル管理
+    "trialHistories": {
+      "$userId": {
+        "$trialHistoryId": {
+          ".read": true,
+          ".write": true,
+          ".validate": "newData.hasChildren(['id', 'userId', 'startDate', 'endDate', 'status', 'trialType', 'createdAt', 'updatedAt']) && newData.child('userId').isString() && newData.child('status').val().matches(/^(active|expired|completed|cancelled)$/) && newData.child('trialType').val().matches(/^(standard|custom)$/)"
+        }
+      }
+    },
+
+    // ========================================
+    // ユーザー関連データ
+    // ========================================
+    "users": {
+      "$uid": {
+        // ========================================
+        // プロジェクトデータ
+        // ========================================
+        "projects": {
+          "$projectId": {
+            // パブリック意見フォーム: 外部からのアクセス可能
+            "public_form": {
+              "responses": {
+                ".read": true,
+                ".write": true,
+                ".validate": "newData.hasChildren(['content', 'submittedAt', 'sentiment', 'characterCount']) && newData.child('content').isString() && newData.child('content').val().length >= 1 && newData.child('content').val().length <= 2000"
+              }
+            },
+
+            // ========================================
+            // 管理者専用 - AI分析結果データ
+            // ========================================
+            "opinions": {
+              ".read": true,
+              ".write": true
+            },
+            "topics": {
+              ".read": true,
+              ".write": true
+            },
+            "insights": {
+              ".read": true,
+              ".write": true
+            },
+            "tasks": {
+              ".read": true,
+              ".write": true
+            },
+            "analysis": {
+              ".read": true,
+              ".write": true
+            },
+            "actions": {
+              ".read": true,
+              ".write": true
+            },
+
+            // ========================================
+            // プロジェクト基本情報
+            // ========================================
+            "name": {
+              ".read": true,
+              ".write": true
+            },
+            "description": {
+              ".read": true,
+              ".write": true
+            },
+            "status": {
+              ".read": true,
+              ".write": true
+            },
+            "collectionMethod": {
+              ".read": true,
+              ".write": true
+            },
+            "opinionsCount": {
+              ".read": true,
+              ".write": true
+            },
+
+            // ========================================
+            // タイムスタンプ情報
+            // ========================================
+            "createdAt": {
+              ".read": true,
+              ".write": true
+            },
+            "updatedAt": {
+              ".read": true,
+              ".write": true
+            },
+            "completedAt": {
+              ".read": true,
+              ".write": true
+            },
+            "archivedAt": {
+              ".read": true,
+              ".write": true
+            },
+            "lastAnalysisAt": {
+              ".read": true,
+              ".write": true
+            },
+            "priorityUpdatedAt": {
+              ".read": true,
+              ".write": true
+            },
+
+            // ========================================
+            // ステータス・フラグ情報
+            // ========================================
+            "isCompleted": {
+              ".read": true,
+              ".write": true
+            },
+            "isArchived": {
+              ".read": true,
+              ".write": true
+            },
+            "isAnalyzed": {
+              ".read": true,
+              ".write": true
+            },
+            "priorityLevel": {
+              ".read": true,
+              ".write": true
+            },
+            "priorityReason": {
+              ".read": true,
+              ".write": true
+            },
+            "lastAnalyzedOpinionsCount": {
+              ".read": true,
+              ".write": true
+            },
+
+            // ========================================
+            // 設定・同期情報
+            // ========================================
+            "config": {
+              ".read": true,
+              ".write": true
+            },
+            "sqliteId": {
+              ".read": true,
+              ".write": true
+            },
+            "firebaseId": {
+              ".read": true,
+              ".write": true
+            },
+
+            // プロジェクト全体のデフォルト権限
+            ".read": true,
+            ".write": true
+          }
+        },
+
+        // ========================================
+        // ユーザープラン履歴データ
+        // ========================================
+        "userPlanHistory": {
+          "$historyId": {
+            ".read": true,
+            ".write": true,
+            ".validate": "newData.hasChildren(['id', 'toPlan', 'changeType', 'effectiveDate', 'createdAt']) && newData.child('id').isString() && newData.child('toPlan').isString() && newData.child('changeType').val().matches(/^(upgrade|downgrade|cancel|trial_start|trial_end|restore|initial)$/) && newData.child('effectiveDate').isString() && newData.child('createdAt').isString() && (!newData.hasChild('fromPlan') || newData.child('fromPlan').isString()) && (!newData.hasChild('changeReason') || newData.child('changeReason').isString()) && (!newData.hasChild('stripeEventId') || newData.child('stripeEventId').isString()) && (!newData.hasChild('metadata') || newData.child('metadata').isString())"
+          }
+        },
+
+        // ========================================
+        // ユーザー基本情報
+        // ========================================
+        "name": {
+          ".read": true,
+          ".write": true
+        },
+        "email": {
+          ".read": true,
+          ".write": true
+        },
+        "purpose": {
+          ".read": true,
+          ".write": true
+        },
+        "language": {
+          ".read": true,
+          ".write": true
+        },
+        "analysisLanguage": {
+          ".read": true,
+          ".write": true
+        },
+        "purposeSkipped": {
+          ".read": true,
+          ".write": true
+        },
+        "createdAt": {
+          ".read": true,
+          ".write": true
+        },
+        "updatedAt": {
+          ".read": true,
+          ".write": true
+        },
+
+        // ユーザー全体のデフォルト権限
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    // ========================================
+    // デフォルト拒否設定
+    // ========================================
+    ".read": false,
+    ".write": false
+  }
+}

@@ -1,0 +1,92 @@
+# 環境変数・設定ファイル
+.env
+.env.local
+.env.*.local
+.env.phase2
+.env.phase3
+
+# Firebase認証情報
+*firebase-adminsdk*.json
+
+# データベースファイル
+*.db
+*.sqlite
+*.sqlite3
+
+# プロセス・実行時ファイル  
+*.pid
+*.lock
+
+# ビルド情報
+*.tsbuildinfo
+
+# ログファイル
+*.log
+logs/
+
+# バックアップファイル
+*.backup
+*.backup-*
+*.bak
+*.old
+
+# Claude Code設定
+.claude/
+*.claude.json
+
+# ビルド成果物
+dist/
+build/
+
+# 依存関係
+node_modules/
+
+# IDE・エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS固有
+.DS_Store
+Thumbs.db
+
+# 一時ファイル
+*.tmp
+*.temp
+*~
+
+# Git hooks
+.husky/
+
+# テストカバレッジ
+coverage/
+
+# Docker
+.dockerignore
+
+# Yarn
+.yarn/
+.yarnrc.yml
+
+# pnpm
+.pnpm-debug.log*
+.pnpm-store/
+
+# Serverless
+.serverless/
+
+# FuseBox
+.fusebox/
+
+# DynamoDB Local
+.dynamodb/
+
+# TernJS
+.tern-project
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# Local env files
+.env*.local
